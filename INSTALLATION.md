@@ -32,7 +32,7 @@
 
 ```bash
 git clone <repository-url>
-cd project_test2
+cd project_test
 ```
 
 ### 2. Setup Backend (Laravel API)
@@ -237,7 +237,7 @@ REDIS_PORT=6379
 server {
     listen 80;
     server_name your-domain.com;
-    root /path/to/project_test2/api/public;
+    root /path/to/project_test/api/public;
 
     index index.php;
 
@@ -275,13 +275,13 @@ sudo apt install supervisor
 ```ini
 [program:pengaduan-worker]
 process_name=%(program_name)s_%(process_num)02d
-command=php /path/to/project_test2/api/artisan queue:work --sleep=3 --tries=3
+command=php /path/to/project_test/api/artisan queue:work --sleep=3 --tries=3
 autostart=true
 autorestart=true
 user=www-data
 numprocs=1
 redirect_stderr=true
-stdout_logfile=/path/to/project_test2/api/storage/logs/worker.log
+stdout_logfile=/path/to/project_test/api/storage/logs/worker.log
 ```
 
 #### c. Start Supervisor:

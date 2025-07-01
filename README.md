@@ -43,7 +43,7 @@ Aplikasi web untuk mengelola pengaduan pelayanan publik Pemerintah Kabupaten Bad
 ## 📁 Struktur Proyek
 
 ```
-project_test2/
+project_test/
 ├── api/                    # Backend Laravel
 │   ├── app/
 │   │   ├── Http/Controllers/Api/
@@ -78,8 +78,8 @@ project_test2/
 ### 1. Clone Repository
 
 ```bash
-git clone <repository-url>
-cd project_test2
+git clone git@github.com:mahfudz19/Sistem-pengaduan-pelayanan-publik.git
+cd Sistem-pengaduan-pelayanan-publik
 ```
 
 ### 2. Setup Backend (Laravel API)
