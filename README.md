@@ -6,12 +6,12 @@ Aplikasi web untuk mengelola pengaduan pelayanan publik Pemerintah Kabupaten Bad
 
 ### Untuk Masyarakat:
 
-- ✅ Registrasi dan login akun
+- ✅ Registrasi dan login akun (langsung aktif)
 - ✅ Daftar layanan yang tersedia
 - ✅ Submit pengaduan dengan upload dokumen
 - ✅ Tracking status pengaduan
 - ✅ Riwayat pengaduan
-- ✅ Notifikasi email otomatis
+- ✅ Notifikasi email untuk status pengaduan
 - ✅ Download dokumen hasil layanan
 
 ### Untuk Admin:

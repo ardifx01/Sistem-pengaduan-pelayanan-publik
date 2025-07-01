@@ -57,9 +57,7 @@ const Register: React.FC = () => {
 
     try {
       await authService.register(formData);
-      setSuccess(
-        "Registrasi berhasil! Silakan cek email Anda untuk verifikasi akun."
-      );
+      setSuccess("Registrasi berhasil! Akun Anda sudah aktif. Silakan login.");
       setTimeout(() => {
         navigate("/login");
       }, 3000);

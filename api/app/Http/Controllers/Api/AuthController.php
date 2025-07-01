@@ -44,15 +44,13 @@ class AuthController extends Controller
             'job' => $request->job,
             'password' => Hash::make($request->password),
             'role' => 'user',
-            'is_active' => false, // Will be activated after email verification
+            'is_active' => true,                // ✅ AUTO ACTIVATE
+            'email_verified_at' => now(),       // ✅ AUTO VERIFY
         ]);
-
-        // Send verification email (optional enhancement)
-        // $this->sendVerificationEmail($user);
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Registration successful. Please check your email for verification.',
+            'message' => 'Registration successful. You can now login.',
             'data' => [
                 'user' => [
                     'id' => $user->id,
@@ -88,12 +86,7 @@ class AuthController extends Controller
 
         $user = Auth::user();
 
-        if (!$user->is_active) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Account not activated. Please check your email for verification.'
-            ], 403);
-        }
+        // Removed email verification check - users can login immediately after registration
 
         $token = $user->createToken('auth_token')->plainTextToken;
 

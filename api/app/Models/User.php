@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -31,7 +30,8 @@ class User extends Authenticatable
         'job',
         'password',
         'role',
-        'is_active'
+        'is_active',
+        'email_verified_at',
     ];
 
     /**
@@ -53,25 +53,20 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'password' => 'hashed',
             'birth_date' => 'date',
             'is_active' => 'boolean',
-            'password' => 'hashed',
         ];
     }
 
-    /**
-     * Get the complaints for the user.
-     */
+    // Relationships
     public function complaints()
     {
         return $this->hasMany(Complaint::class);
     }
 
-    /**
-     * Check if user is admin.
-     */
-    public function isAdmin()
+    public function notifications()
     {
-        return $this->role === 'admin';
+        return $this->morphMany(\Illuminate\Notifications\DatabaseNotification::class, 'notifiable');
     }
 }
