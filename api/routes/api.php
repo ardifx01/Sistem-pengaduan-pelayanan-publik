@@ -37,6 +37,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Complaint routes
     Route::apiResource('complaints', ComplaintController::class)->except(['update', 'destroy']);
     Route::put('/complaints/{complaint}/status', [ComplaintController::class, 'updateStatus']);
+    Route::post('/complaints/{complaint}/status', [ComplaintController::class, 'updateStatus']); // ✅ Alternative for file uploads
     Route::get('/complaints-statistics', [ComplaintController::class, 'statistics']);
     Route::get('/complaints/{complaint}/documents/{documentId}/download', [ComplaintController::class, 'downloadDocument']);
     Route::get('/complaints/{complaint}/result/download', [ComplaintController::class, 'downloadResult']);

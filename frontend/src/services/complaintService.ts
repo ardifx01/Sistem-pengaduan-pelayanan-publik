@@ -104,21 +104,65 @@ export const complaintService = {
 
   async updateStatus(
     id: number,
-    status: string,
+    data: { status: string; message?: string } | string,
     notes?: string,
     resultDocument?: File
   ) {
-    const formData = new FormData();
-    formData.append("status", status);
-    if (notes) formData.append("notes", notes);
-    if (resultDocument) formData.append("result_document", resultDocument);
-
-    const response = await api.put(`/complaints/${id}/status`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
+    console.log("Service updateStatus called with:", {
+      id,
+      data,
+      notes,
+      resultDocument,
     });
-    return response.data;
+
+    if (resultDocument) {
+      // ✅ Use FormData with POST when file upload is involved (better compatibility)
+      const formData = new FormData();
+
+      if (typeof data === "object" && data !== null) {
+        formData.append("status", data.status);
+        if (data.message) formData.append("notes", data.message);
+      } else if (typeof data === "string") {
+        formData.append("status", data);
+        if (notes) formData.append("notes", notes);
+      }
+
+      formData.append("result_document", resultDocument);
+
+      console.log("Using FormData with POST for file upload");
+
+      // ✅ Use POST instead of PUT for file uploads
+      const response = await api.post(`/complaints/${id}/status`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      console.log("Service response:", response.data);
+      return response.data;
+    } else {
+      // ✅ Use JSON when no file upload
+      let payload: any = {};
+
+      if (typeof data === "object" && data !== null) {
+        payload.status = data.status;
+        if (data.message) payload.notes = data.message;
+      } else if (typeof data === "string") {
+        payload.status = data;
+        if (notes) payload.notes = notes;
+      }
+
+      console.log("Using JSON payload:", payload);
+
+      const response = await api.put(`/complaints/${id}/status`, payload, {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      console.log("Service response:", response.data);
+      return response.data;
+    }
   },
 
   async track(registrationNumber: string) {

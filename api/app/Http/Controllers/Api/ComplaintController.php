@@ -12,6 +12,7 @@ use App\Notifications\ComplaintStatusChanged;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class ComplaintController extends Controller
@@ -158,6 +159,17 @@ class ComplaintController extends Controller
      */
     public function updateStatus(Request $request, Complaint $complaint)
     {
+        // ✅ Debug logging
+        Log::info('Update Status Request:', [
+            'complaint_id' => $complaint->id,
+            'method' => $request->method(),
+            'content_type' => $request->header('Content-Type'),
+            'all_data' => $request->all(),
+            'files' => $request->allFiles(),
+            'has_status' => $request->has('status'),
+            'status_value' => $request->get('status')
+        ]);
+
         if (!$request->user()->isAdmin()) {
             return response()->json([
                 'status' => 'error',
@@ -172,6 +184,11 @@ class ComplaintController extends Controller
         ]);
 
         if ($validator->fails()) {
+            Log::error('Validation failed:', [
+                'errors' => $validator->errors(),
+                'input' => $request->all()
+            ]);
+
             return response()->json([
                 'status' => 'error',
                 'message' => 'Validation failed',

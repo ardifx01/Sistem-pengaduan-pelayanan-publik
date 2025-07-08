@@ -160,7 +160,7 @@ Setelah menjalankan seeder, tersedia user default:
 
 ### Operator:
 
-- **Email**: operator@badung.go.id  
+- **Email**: operator@badung.go.id
 - **Password**: operator123
 
 ### User Test:

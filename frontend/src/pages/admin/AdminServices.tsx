@@ -95,8 +95,8 @@ const AdminServices: React.FC = () => {
       if (categoryFilter) params.category = categoryFilter;
 
       const response = await serviceService.getAll(params);
-      console.log('Services API Response:', response); // Debug log
-      
+      console.log("Services API Response:", response); // Debug log
+
       // Handle Laravel pagination response
       if (response.data && response.data.data) {
         setServices(response.data.data);
@@ -109,7 +109,7 @@ const AdminServices: React.FC = () => {
         setTotalPages(1);
       }
     } catch (err: any) {
-      console.error('Services API Error:', err);
+      console.error("Services API Error:", err);
       setError(err.response?.data?.message || "Failed to fetch services");
       setServices([]); // Set empty array on error
     } finally {
@@ -355,7 +355,9 @@ const AdminServices: React.FC = () => {
               <TableRow>
                 <TableCell colSpan={7} align="center">
                   <Typography variant="body2" color="textSecondary">
-                    {Array.isArray(services) ? "Tidak ada layanan ditemukan" : "Memuat data..."}
+                    {Array.isArray(services)
+                      ? "Tidak ada layanan ditemukan"
+                      : "Memuat data..."}
                   </Typography>
                 </TableCell>
               </TableRow>

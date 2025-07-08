@@ -38,6 +38,7 @@ interface Complaint {
   applicant_name: string;
   description: string;
   status: string;
+  notes: string;
   user: {
     name: string;
     email: string;
@@ -88,13 +89,15 @@ const AdminComplaints: React.FC = () => {
       if (statusFilter) params.status = statusFilter;
 
       const response = await complaintService.getAll(params);
-      
-      console.log('API Response:', response); // Debug log
-      
+
+      console.log("API Response:", response); // Debug log
+
       // Handle Laravel pagination response structure
       if (response.data && response.data.data) {
         // Laravel pagination: { data: { data: [...], current_page, last_page, ... } }
-        setComplaints(Array.isArray(response.data.data) ? response.data.data : []);
+        setComplaints(
+          Array.isArray(response.data.data) ? response.data.data : []
+        );
         setTotalPages(response.data.last_page || 1);
       } else if (response.data && Array.isArray(response.data)) {
         // Direct array response: { data: [...] }
@@ -105,12 +108,12 @@ const AdminComplaints: React.FC = () => {
         setComplaints(response);
         setTotalPages(1);
       } else {
-        console.warn('Unexpected response format:', response);
+        console.warn("Unexpected response format:", response);
         setComplaints([]);
         setTotalPages(1);
       }
     } catch (err: any) {
-      console.error('Fetch complaints error:', err);
+      console.error("Fetch complaints error:", err);
       setError(err.response?.data?.message || "Failed to fetch complaints");
       setComplaints([]); // Ensure complaints is always an array
     } finally {
@@ -123,39 +126,73 @@ const AdminComplaints: React.FC = () => {
   }, [fetchComplaints]);
 
   const handleStatusUpdate = async () => {
-    if (!selectedComplaint || !newStatus) return;
+    if (!selectedComplaint || !newStatus) {
+      setError("Status harus dipilih");
+      return;
+    }
 
     try {
-      await complaintService.updateStatus(
-        selectedComplaint.id,
-        newStatus,
-        statusNote
-      );
+      console.log("Updating status:", {
+        id: selectedComplaint.id,
+        status: newStatus,
+        note: statusNote,
+      });
+
+      // ✅ Perbaiki parameter sesuai dengan API backend
+      const payload = {
+        status: newStatus,
+        message: statusNote || undefined,
+      };
+
+      console.log("Payload being sent:", payload);
+
+      await complaintService.updateStatus(selectedComplaint.id, payload);
+
       setSuccess("Status updated successfully");
       setStatusDialog(false);
       setNewStatus("");
       setStatusNote("");
       fetchComplaints();
     } catch (err: any) {
+      console.error("Update status error:", err);
       setError(err.response?.data?.message || "Failed to update status");
     }
   };
 
   const handleFileUpload = async () => {
-    if (!selectedComplaint || !uploadFile) return;
+    if (!selectedComplaint || !uploadFile) {
+      setError("File harus dipilih");
+      return;
+    }
 
     try {
+      console.log("Uploading file:", {
+        complaintId: selectedComplaint.id,
+        fileName: uploadFile.name,
+        currentStatus: selectedComplaint.status,
+      });
+
+      // ✅ Gunakan format object yang konsisten dengan handleStatusUpdate
+      const payload = {
+        status: selectedComplaint.status, // Keep current status
+        message: undefined, // No message change for file upload
+      };
+
+      console.log("File upload payload:", payload);
+
       await complaintService.updateStatus(
         selectedComplaint.id,
-        selectedComplaint.status,
-        undefined,
-        uploadFile
+        payload,
+        undefined, // No notes parameter
+        uploadFile // Upload file
       );
+
       setSuccess("Document uploaded successfully");
       setUploadDialog(false);
       setUploadFile(null);
       fetchComplaints();
     } catch (err: any) {
+      console.error("File upload error:", err);
       setError(err.response?.data?.message || "Failed to upload document");
     }
   };
@@ -297,6 +334,7 @@ const AdminComplaints: React.FC = () => {
                           onClick={() => {
                             setSelectedComplaint(complaint);
                             setNewStatus(complaint.status);
+                            setStatusNote(complaint.notes || "");
                             setStatusDialog(true);
                           }}
                         >
@@ -323,7 +361,9 @@ const AdminComplaints: React.FC = () => {
               <TableRow>
                 <TableCell colSpan={6} align="center">
                   <Typography variant="body2" color="textSecondary">
-                    {Array.isArray(complaints) ? "Tidak ada pengaduan ditemukan" : "Memuat data..."}
+                    {Array.isArray(complaints)
+                      ? "Tidak ada pengaduan ditemukan"
+                      : "Memuat data..."}
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -391,12 +431,33 @@ const AdminComplaints: React.FC = () => {
       <Dialog open={statusDialog} onClose={() => setStatusDialog(false)}>
         <DialogTitle>Update Status Pengaduan</DialogTitle>
         <DialogContent>
-          <FormControl fullWidth margin="normal">
+          {selectedComplaint && (
+            <Box mb={2}>
+              <Typography variant="body2">
+                <strong>Pengaduan:</strong>{" "}
+                {selectedComplaint.registration_number} -{" "}
+                {selectedComplaint.applicant_name}
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                <strong>Status saat ini:</strong>{" "}
+                <Chip
+                  label={selectedComplaint.status
+                    .replace("_", " ")
+                    .toUpperCase()}
+                  color={statusColors[selectedComplaint.status]}
+                  size="small"
+                />
+              </Typography>
+            </Box>
+          )}
+
+          <FormControl fullWidth margin="normal" required>
             <InputLabel>Status Baru</InputLabel>
             <Select
               value={newStatus}
               label="Status Baru"
               onChange={(e) => setNewStatus(e.target.value)}
+              error={!newStatus}
             >
               <MenuItem value="pending">Pending</MenuItem>
               <MenuItem value="reviewing">Reviewing</MenuItem>
@@ -405,7 +466,13 @@ const AdminComplaints: React.FC = () => {
               <MenuItem value="completed">Completed</MenuItem>
               <MenuItem value="rejected">Rejected</MenuItem>
             </Select>
+            {!newStatus && (
+              <Typography variant="caption" color="error" sx={{ mt: 1 }}>
+                Status harus dipilih
+              </Typography>
+            )}
           </FormControl>
+
           <TextField
             fullWidth
             multiline
@@ -414,29 +481,100 @@ const AdminComplaints: React.FC = () => {
             value={statusNote}
             onChange={(e) => setStatusNote(e.target.value)}
             margin="normal"
+            placeholder="Tambahkan catatan untuk pemohon..."
           />
+
+          {/* Debug info */}
+          <Box mt={2} p={1} bgcolor="#f5f5f5" borderRadius={1}>
+            <Typography variant="caption" color="textSecondary">
+              Debug: Status = "{newStatus}", Note length = {statusNote.length}
+            </Typography>
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setStatusDialog(false)}>Batal</Button>
-          <Button onClick={handleStatusUpdate} variant="contained">
-            Update
+          <Button
+            onClick={handleStatusUpdate}
+            variant="contained"
+            disabled={!newStatus}
+            color="primary"
+          >
+            Update Status
           </Button>
         </DialogActions>
       </Dialog>
 
       {/* Upload Dialog */}
-      <Dialog open={uploadDialog} onClose={() => setUploadDialog(false)}>
+      <Dialog
+        open={uploadDialog}
+        onClose={() => setUploadDialog(false)}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>Upload Dokumen Hasil</DialogTitle>
         <DialogContent>
+          {selectedComplaint && (
+            <Box mb={2}>
+              <Typography variant="body2">
+                <strong>Pengaduan:</strong>{" "}
+                {selectedComplaint.registration_number} -{" "}
+                {selectedComplaint.applicant_name}
+              </Typography>
+              <Typography variant="body2" color="textSecondary">
+                <strong>Status:</strong>{" "}
+                <Chip
+                  label={selectedComplaint.status
+                    .replace("_", " ")
+                    .toUpperCase()}
+                  color={statusColors[selectedComplaint.status]}
+                  size="small"
+                />
+              </Typography>
+            </Box>
+          )}
+
           <Box mt={2}>
+            <Typography variant="body2" gutterBottom>
+              Pilih dokumen hasil yang akan diunggah:
+            </Typography>
             <input
               type="file"
               accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
               onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+              style={{
+                width: "100%",
+                padding: "8px",
+                border: "1px solid #ccc",
+                borderRadius: "4px",
+              }}
             />
-            <Typography variant="caption" display="block" mt={1}>
-              Format yang didukung: PDF, DOC, DOCX, JPG, JPEG, PNG
+            <Typography
+              variant="caption"
+              display="block"
+              mt={1}
+              color="textSecondary"
+            >
+              Format yang didukung: PDF, DOC, DOCX, JPG, JPEG, PNG (Max: 2MB)
             </Typography>
+
+            {uploadFile && (
+              <Box mt={2} p={2} bgcolor="#f5f5f5" borderRadius={1}>
+                <Typography variant="body2">
+                  <strong>File dipilih:</strong> {uploadFile.name}
+                </Typography>
+                <Typography variant="caption" color="textSecondary">
+                  Ukuran: {(uploadFile.size / 1024 / 1024).toFixed(2)} MB
+                </Typography>
+              </Box>
+            )}
+
+            {/* Debug info */}
+            <Box mt={2} p={1} bgcolor="#f0f0f0" borderRadius={1}>
+              <Typography variant="caption" color="textSecondary">
+                Debug: File selected = {uploadFile ? "Yes" : "No"}, Status = "
+                {selectedComplaint?.status}"
+              </Typography>
+            </Box>
           </Box>
         </DialogContent>
         <DialogActions>
@@ -445,8 +583,9 @@ const AdminComplaints: React.FC = () => {
             onClick={handleFileUpload}
             variant="contained"
             disabled={!uploadFile}
+            color="primary"
           >
-            Upload
+            Upload Dokumen
           </Button>
         </DialogActions>
       </Dialog>
