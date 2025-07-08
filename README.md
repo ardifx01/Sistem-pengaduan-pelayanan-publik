@@ -156,11 +156,16 @@ Setelah menjalankan seeder, tersedia user default:
 ### Admin:
 
 - **Email**: admin@badung.go.id
-- **Password**: password
+- **Password**: admin123
+
+### Operator:
+
+- **Email**: operator@badung.go.id  
+- **Password**: operator123
 
 ### User Test:
 
-- **Email**: user1@example.com s/d user10@example.com
+- **Email**: user1@test.com s/d user10@test.com
 - **Password**: password
 
 ## 📊 Database Schema

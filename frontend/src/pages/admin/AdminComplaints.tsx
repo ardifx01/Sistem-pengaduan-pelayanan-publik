@@ -88,10 +88,31 @@ const AdminComplaints: React.FC = () => {
       if (statusFilter) params.status = statusFilter;
 
       const response = await complaintService.getAll(params);
-      setComplaints(response.data || []);
-      setTotalPages(response.last_page || 1);
+      
+      console.log('API Response:', response); // Debug log
+      
+      // Handle Laravel pagination response structure
+      if (response.data && response.data.data) {
+        // Laravel pagination: { data: { data: [...], current_page, last_page, ... } }
+        setComplaints(Array.isArray(response.data.data) ? response.data.data : []);
+        setTotalPages(response.data.last_page || 1);
+      } else if (response.data && Array.isArray(response.data)) {
+        // Direct array response: { data: [...] }
+        setComplaints(response.data);
+        setTotalPages(1);
+      } else if (Array.isArray(response)) {
+        // Direct array response
+        setComplaints(response);
+        setTotalPages(1);
+      } else {
+        console.warn('Unexpected response format:', response);
+        setComplaints([]);
+        setTotalPages(1);
+      }
     } catch (err: any) {
+      console.error('Fetch complaints error:', err);
       setError(err.response?.data?.message || "Failed to fetch complaints");
+      setComplaints([]); // Ensure complaints is always an array
     } finally {
       setLoading(false);
     }
@@ -230,73 +251,83 @@ const AdminComplaints: React.FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {complaints.map((complaint) => (
-              <TableRow key={complaint.id}>
-                <TableCell>
-                  <Typography variant="body2" fontWeight="bold">
-                    {complaint.registration_number}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2">
-                    {complaint.applicant_name}
-                  </Typography>
-                </TableCell>
-                <TableCell>{complaint.service?.name}</TableCell>
-                <TableCell>
-                  <Chip
-                    label={complaint.status.replace("_", " ").toUpperCase()}
-                    color={statusColors[complaint.status]}
-                    size="small"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2">
-                    {formatDate(complaint.created_at)}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Box display="flex" gap={1}>
-                    <Tooltip title="Lihat Detail">
-                      <IconButton
-                        size="small"
-                        onClick={() => {
-                          setSelectedComplaint(complaint);
-                          setDetailDialog(true);
-                        }}
-                      >
-                        <ViewIcon />
-                      </IconButton>
-                    </Tooltip>
+            {Array.isArray(complaints) && complaints.length > 0 ? (
+              complaints.map((complaint) => (
+                <TableRow key={complaint.id}>
+                  <TableCell>
+                    <Typography variant="body2" fontWeight="bold">
+                      {complaint.registration_number}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2">
+                      {complaint.applicant_name}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>{complaint.service?.name}</TableCell>
+                  <TableCell>
+                    <Chip
+                      label={complaint.status.replace("_", " ").toUpperCase()}
+                      color={statusColors[complaint.status]}
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2">
+                      {formatDate(complaint.created_at)}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Box display="flex" gap={1}>
+                      <Tooltip title="Lihat Detail">
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            setSelectedComplaint(complaint);
+                            setDetailDialog(true);
+                          }}
+                        >
+                          <ViewIcon />
+                        </IconButton>
+                      </Tooltip>
 
-                    <Tooltip title="Update Status">
-                      <IconButton
-                        size="small"
-                        onClick={() => {
-                          setSelectedComplaint(complaint);
-                          setNewStatus(complaint.status);
-                          setStatusDialog(true);
-                        }}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                    </Tooltip>
+                      <Tooltip title="Update Status">
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            setSelectedComplaint(complaint);
+                            setNewStatus(complaint.status);
+                            setStatusDialog(true);
+                          }}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                      </Tooltip>
 
-                    <Tooltip title="Upload Dokumen Hasil">
-                      <IconButton
-                        size="small"
-                        onClick={() => {
-                          setSelectedComplaint(complaint);
-                          setUploadDialog(true);
-                        }}
-                      >
-                        <UploadIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
+                      <Tooltip title="Upload Dokumen Hasil">
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            setSelectedComplaint(complaint);
+                            setUploadDialog(true);
+                          }}
+                        >
+                          <UploadIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={6} align="center">
+                  <Typography variant="body2" color="textSecondary">
+                    {Array.isArray(complaints) ? "Tidak ada pengaduan ditemukan" : "Memuat data..."}
+                  </Typography>
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </TableContainer>

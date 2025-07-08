@@ -90,14 +90,28 @@ const AdminServices: React.FC = () => {
   const fetchServices = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
       const params: any = { page };
       if (categoryFilter) params.category = categoryFilter;
 
       const response = await serviceService.getAll(params);
-      setServices(response.data || []);
-      setTotalPages(response.last_page || 1);
+      console.log('Services API Response:', response); // Debug log
+      
+      // Handle Laravel pagination response
+      if (response.data && response.data.data) {
+        setServices(response.data.data);
+        setTotalPages(response.data.last_page || 1);
+      } else if (Array.isArray(response.data)) {
+        setServices(response.data);
+        setTotalPages(1);
+      } else {
+        setServices([]);
+        setTotalPages(1);
+      }
     } catch (err: any) {
+      console.error('Services API Error:', err);
       setError(err.response?.data?.message || "Failed to fetch services");
+      setServices([]); // Set empty array on error
     } finally {
       setLoading(false);
     }
@@ -273,69 +287,79 @@ const AdminServices: React.FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {services.map((service) => (
-              <TableRow key={service.id}>
-                <TableCell>
-                  <Typography variant="body2" fontWeight="bold">
-                    {service.name}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {service.description.substring(0, 50)}...
-                  </Typography>
-                </TableCell>
-                <TableCell>{service.category}</TableCell>
-                <TableCell>{service.processing_time}</TableCell>
-                <TableCell>{formatCurrency(service.cost)}</TableCell>
-                <TableCell>
-                  <Chip
-                    label={service.is_active ? "Aktif" : "Tidak Aktif"}
-                    color={service.is_active ? "success" : "default"}
-                    size="small"
-                  />
-                </TableCell>
-                <TableCell>
-                  <Typography variant="body2">
-                    {formatDate(service.created_at)}
-                  </Typography>
-                </TableCell>
-                <TableCell>
-                  <Box display="flex" gap={1}>
-                    <Tooltip title="Lihat Detail">
-                      <IconButton
-                        size="small"
-                        onClick={() => {
-                          setSelectedService(service);
-                          setDetailDialog(true);
-                        }}
-                      >
-                        <ViewIcon />
-                      </IconButton>
-                    </Tooltip>
+            {Array.isArray(services) && services.length > 0 ? (
+              services.map((service) => (
+                <TableRow key={service.id}>
+                  <TableCell>
+                    <Typography variant="body2" fontWeight="bold">
+                      {service.name}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {service.description.substring(0, 50)}...
+                    </Typography>
+                  </TableCell>
+                  <TableCell>{service.category}</TableCell>
+                  <TableCell>{service.processing_time}</TableCell>
+                  <TableCell>{formatCurrency(service.cost)}</TableCell>
+                  <TableCell>
+                    <Chip
+                      label={service.is_active ? "Aktif" : "Tidak Aktif"}
+                      color={service.is_active ? "success" : "default"}
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2">
+                      {formatDate(service.created_at)}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Box display="flex" gap={1}>
+                      <Tooltip title="Lihat Detail">
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            setSelectedService(service);
+                            setDetailDialog(true);
+                          }}
+                        >
+                          <ViewIcon />
+                        </IconButton>
+                      </Tooltip>
 
-                    <Tooltip title="Edit">
-                      <IconButton
-                        size="small"
-                        onClick={() => handleOpenForm(service)}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                    </Tooltip>
+                      <Tooltip title="Edit">
+                        <IconButton
+                          size="small"
+                          onClick={() => handleOpenForm(service)}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                      </Tooltip>
 
-                    <Tooltip title="Hapus">
-                      <IconButton
-                        size="small"
-                        onClick={() => {
-                          setSelectedService(service);
-                          setDeleteDialog(true);
-                        }}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
+                      <Tooltip title="Hapus">
+                        <IconButton
+                          size="small"
+                          onClick={() => {
+                            setSelectedService(service);
+                            setDeleteDialog(true);
+                          }}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={7} align="center">
+                  <Typography variant="body2" color="textSecondary">
+                    {Array.isArray(services) ? "Tidak ada layanan ditemukan" : "Memuat data..."}
+                  </Typography>
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
       </TableContainer>
